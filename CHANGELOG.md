@@ -1,3 +1,10 @@
+v2.7.1.2 (HA 2024.12 backport)
+
+- Added six pollutant concentration sensor types per region, disabled by default.
+- Adopted entity naming and region devices while retaining existing entity IDs and unique IDs.
+- Used HA 2024.12-compatible concentration units and `DeviceInfo.via_device`.
+- Pinned HA integration tests to Core 2024.12.3.
+
 v2.7.0
 
 - Updated version to 2.7.0 for HACS compatibility

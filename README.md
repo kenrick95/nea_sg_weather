@@ -2,13 +2,13 @@
 
 ## HA 2024.12 maintenance branch
 
-This branch starts from upstream `v2.7.1`, which has been confirmed working on Home Assistant Core 2024.12.3. It retains the `nea_sg_weather` integration domain and existing config entries. The integration manifest declares a minimum of HA 2024.6.0; Core 2024.12.3 is the tested user version, not a promise that every intervening release has been tested.
+This branch starts from upstream `v2.7.1` and targets Home Assistant Core 2024.12.3. It retains the `nea_sg_weather` integration domain, config entries, entity IDs, and unique IDs. The minimum HA version is set to the version used in integration tests.
 
-Upstream `v2.8.0` raises the minimum to HA 2026.9.0 and imports `ChildDeviceInfo` for region devices. Do not merge that release into this branch without an explicit HA 2024 compatibility port and runtime test.
+The `v2.7.1.2` release backports v2.8.0's pollutant concentration sensors and entity naming. The 30 pollutant sensors are disabled by default; enable the ones you want in Settings > Devices & Services. Region devices use HA 2024.12's `DeviceInfo.via_device` instead of v2.8.0's `ChildDeviceInfo`. Existing entity IDs and unique IDs are preserved, while friendly names and device grouping change.
 
-To use this branch through HACS, publish this repository to your GitHub account, create a release from the `v2.7.1.1` tag, and add `<owner>/<repository>` as a HACS custom repository of type **Integration**. Install it over the existing `custom_components/nea_sg_weather` files, then restart Home Assistant. Keep a backup of that directory first. Do not remove the integration from Settings > Devices & Services; that would discard its config entry. Do not install the upstream repository and this fork at the same time because both provide the same domain.
+To use this fork through HACS, add `kenrick95/nea_sg_weather` as a custom repository of type **Integration** and install `v2.7.1.2`. Restart Home Assistant. Keep the existing integration entry in Settings > Devices & Services. The previous `v2.7.1.1` release remains available for rollback.
 
-For future maintenance, cherry-pick individual upstream fixes into `ha-2024.12`, review imports against Core 2024.12.3, run the tests, and publish a new release with a matching manifest version.
+For future maintenance, cherry-pick individual upstream fixes into `ha-2024.12`, review imports against Core 2024.12.3, run the unit and HA integration tests, and publish a new release with a matching manifest version.
 
 [CHANGELOG](CHANGELOG.md)
 
