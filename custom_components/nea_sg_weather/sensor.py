@@ -20,12 +20,12 @@ from homeassistant.const import (
     UnitOfPrecipitationDepth,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import NeaWeatherDataUpdateCoordinator
+from .entity import main_device_info, region_device_info
 from .const import (
     AREAS,
     CONF_AREAS,
@@ -156,6 +156,8 @@ async def async_setup_entry(
 class NeaAreaSensor(CoordinatorEntity, SensorEntity):
     """Implementation of a NEA Weather sensor for an area in Singapore."""
 
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         coordinator,
@@ -170,6 +172,7 @@ class NeaAreaSensor(CoordinatorEntity, SensorEntity):
         self._prefix = config[CONF_SENSORS][CONF_PREFIX]
         self._area = area
         self._entry_id = entry_id
+        self._attr_device_info = main_device_info(entry_id)
         self.entity_id = (
             (self._platform + "." + self._prefix + "_" + self._area)
             .lower()
@@ -209,19 +212,12 @@ class NeaAreaSensor(CoordinatorEntity, SensorEntity):
             ]["longitude"],
         }
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Device info."""
-        return DeviceInfo(
-            name="Weather forecast coordinator",
-            identifiers={(DOMAIN, self._entry_id)},
-            manufacturer="NEA Weather",
-            model="data.gov.sg API Polling",
-        )
-
 
 class NeaRegionSensor(CoordinatorEntity, SensorEntity):
     """Implementation of a NEA Weather sensor for a region in Singapore."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "forecast"
 
     def __init__(
         self,
@@ -237,6 +233,7 @@ class NeaRegionSensor(CoordinatorEntity, SensorEntity):
         self._prefix = config[CONF_SENSORS][CONF_PREFIX]
         self._region = region
         self._entry_id = entry_id
+        self._attr_device_info = region_device_info(coordinator, entry_id, region)
         self.entity_id = (
             (self._platform + "." + self._prefix + "_" + self._region)
             .lower()
@@ -247,15 +244,6 @@ class NeaRegionSensor(CoordinatorEntity, SensorEntity):
     def unique_id(self):
         """Return the unique ID."""
         return self._prefix + " " + self._region
-
-    @property
-    def name(self):
-        """Return the friendly name of the sensor."""
-        return (
-            ("Weather in " + self._region + "ern Singapore")
-            if self._region != "Central"
-            else ("Weather in " + self._region + " Singapore")
-        )
 
     @property
     def entity_picture(self):
@@ -283,20 +271,12 @@ class NeaRegionSensor(CoordinatorEntity, SensorEntity):
             **_forecasts,
         }
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Device info."""
-        return DeviceInfo(
-            name="Weather forecast coordinator",
-            identifiers={(DOMAIN, self._entry_id)},
-            manufacturer="NEA Weather",
-            model="data.gov.sg API Polling",
-        )
-
 
 class NeaPM25Sensor(CoordinatorEntity, SensorEntity):
     """Implementation of a NEA pm25 sensor for a region in Singapore."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "pm25_1h"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_device_class = SensorDeviceClass.PM25
     _attr_native_unit_of_measurement = "µg/m³"
@@ -315,6 +295,7 @@ class NeaPM25Sensor(CoordinatorEntity, SensorEntity):
         self._prefix = config[CONF_SENSORS][CONF_PREFIX]
         self._region = region
         self._entry_id = entry_id
+        self._attr_device_info = region_device_info(coordinator, entry_id, region)
         self.entity_id = (
             (self._platform + "." + self._prefix + "_pm25" + self._region)
             .lower()
@@ -325,15 +306,6 @@ class NeaPM25Sensor(CoordinatorEntity, SensorEntity):
     def unique_id(self):
         """Return the unique ID."""
         return self._prefix + " pm25 " + self._region
-
-    @property
-    def name(self):
-        """Return the friendly name of the sensor."""
-        return (
-            ("PM 2.5 Readings in " + self._region + "ern Singapore")
-            if self._region != "Central"
-            else ("PM 2.5 Readings in " + self._region + " Singapore")
-        )
 
     @property
     def native_value(self):
@@ -347,20 +319,12 @@ class NeaPM25Sensor(CoordinatorEntity, SensorEntity):
             "Updated at": self.coordinator.data.pm25.timestamp,
         }
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Device info."""
-        return DeviceInfo(
-            name="Weather forecast coordinator",
-            identifiers={(DOMAIN, self._entry_id)},
-            manufacturer="NEA Weather",
-            model="data.gov.sg API Polling",
-        )
-
 
 class NeaPSISensor(CoordinatorEntity, SensorEntity):
     """Implementation of a NEA 24-hour PSI sensor for a region in Singapore."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "psi_24h"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_device_class = SensorDeviceClass.AQI
     _attr_icon = "mdi:weather-hazy"
@@ -379,6 +343,7 @@ class NeaPSISensor(CoordinatorEntity, SensorEntity):
         self._prefix = config[CONF_SENSORS][CONF_PREFIX]
         self._region = region
         self._entry_id = entry_id
+        self._attr_device_info = region_device_info(coordinator, entry_id, region)
         self.entity_id = (
             (self._platform + "." + self._prefix + "_psi" + self._region)
             .lower()
@@ -389,15 +354,6 @@ class NeaPSISensor(CoordinatorEntity, SensorEntity):
     def unique_id(self):
         """Return the unique ID."""
         return self._prefix + " psi " + self._region
-
-    @property
-    def name(self):
-        """Return the friendly name of the sensor."""
-        return (
-            ("PSI in " + self._region + "ern Singapore")
-            if self._region != "Central"
-            else ("PSI in " + self._region + " Singapore")
-        )
 
     @property
     def native_value(self):
@@ -417,16 +373,6 @@ class NeaPSISensor(CoordinatorEntity, SensorEntity):
             attributes[pollutant.upper() + " sub-index"] = values.get(region)
         return attributes
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Device info."""
-        return DeviceInfo(
-            name="Weather forecast coordinator",
-            identifiers={(DOMAIN, self._entry_id)},
-            manufacturer="NEA Weather",
-            model="data.gov.sg API Polling",
-        )
-
 
 POLLUTANT_DEVICE_CLASSES = {
     "pm25_24h": SensorDeviceClass.PM25,
@@ -436,20 +382,11 @@ POLLUTANT_DEVICE_CLASSES = {
     "co_8h": SensorDeviceClass.CO,
     "no2_1h": SensorDeviceClass.NITROGEN_DIOXIDE,
 }
-POLLUTANT_NAMES = {
-    "pm25_24h": "PM2.5 (24-hour)",
-    "pm10_24h": "PM10 (24-hour)",
-    "so2_24h": "SO2 (24-hour)",
-    "o3_8h": "O3 (8-hour max)",
-    "co_8h": "CO (8-hour max)",
-    "no2_1h": "NO2 (1-hour max)",
-}
-
-
 class NeaPollutantSensor(CoordinatorEntity, SensorEntity):
     """A regional pollutant concentration from the PSI response."""
 
     _attr_entity_registry_enabled_default = False
+    _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(
@@ -465,6 +402,8 @@ class NeaPollutantSensor(CoordinatorEntity, SensorEntity):
         self._pollutant = pollutant
         self._region = region
         self._entry_id = entry_id
+        self._attr_translation_key = pollutant
+        self._attr_device_info = region_device_info(coordinator, entry_id, region)
         self._attr_device_class = POLLUTANT_DEVICE_CLASSES[pollutant]
         self._attr_native_unit_of_measurement = (
             CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER
@@ -478,15 +417,6 @@ class NeaPollutantSensor(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self) -> str:
         return f"{self._prefix} {self._pollutant} {self._region}"
-
-    @property
-    def name(self) -> str:
-        location = (
-            "Central Singapore"
-            if self._region == "Central"
-            else f"{self._region}ern Singapore"
-        )
-        return f"{POLLUTANT_NAMES[self._pollutant]} in {location}"
 
     @property
     def available(self) -> bool:
@@ -506,19 +436,11 @@ class NeaPollutantSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self) -> dict:
         return {"Updated at": self.coordinator.data.psi.timestamp}
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            name="Weather forecast coordinator",
-            identifiers={(DOMAIN, self._entry_id)},
-            manufacturer="NEA Weather",
-            model="data.gov.sg API Polling",
-        )
-
-
 class NeaRainSensor(CoordinatorEntity, SensorEntity):
     """Implementation of a NEA Weather sensor for a rainfall sensor in Singapore."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "rainfall"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_device_class = SensorDeviceClass.PRECIPITATION
     _attr_native_unit_of_measurement = UnitOfPrecipitationDepth.MILLIMETERS
@@ -537,6 +459,11 @@ class NeaRainSensor(CoordinatorEntity, SensorEntity):
         self._prefix = config[CONF_SENSORS][CONF_PREFIX]
         self._rain_sensor_id = rain_sensor_id
         self._entry_id = entry_id
+        self._attr_device_info = main_device_info(entry_id)
+        station = coordinator.data.rain.data.get(rain_sensor_id, {})
+        self._attr_translation_placeholders = {
+            "station": station.get("name", rain_sensor_id)
+        }
         self.entity_id = (
             (self._platform + "." + self._prefix + "_rainfall_" + self._rain_sensor_id)
             .lower()
@@ -555,11 +482,6 @@ class NeaRainSensor(CoordinatorEntity, SensorEntity):
             super().available
             and self._rain_sensor_id in self.coordinator.data.rain.data
         )
-
-    @property
-    def name(self):
-        """Return the friendly name of the sensor."""
-        return self._rain_sensor_id
 
     @property
     def icon(self):
@@ -610,20 +532,12 @@ class NeaRainSensor(CoordinatorEntity, SensorEntity):
             ]["longitude"],
         }
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Device info."""
-        return DeviceInfo(
-            name="Weather forecast coordinator",
-            identifiers={(DOMAIN, self._entry_id)},
-            manufacturer="NEA Weather",
-            model="data.gov.sg API Polling",
-        )
-
 
 class NeaUVSensor(CoordinatorEntity, SensorEntity):
     """Implementation of a NEA UV sensor in Singapore."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "uv_index"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:weather-sunny"
 
@@ -639,6 +553,7 @@ class NeaUVSensor(CoordinatorEntity, SensorEntity):
         self._platform = "sensor"
         self._prefix = config[CONF_SENSORS][CONF_PREFIX]
         self._entry_id = entry_id
+        self._attr_device_info = main_device_info(entry_id)
         self.entity_id = (
             (self._platform + "." + self._prefix + "_uv")
             .lower()
@@ -651,11 +566,6 @@ class NeaUVSensor(CoordinatorEntity, SensorEntity):
         return self._prefix + "_uv"
 
     @property
-    def name(self):
-        """Return the friendly name of the sensor."""
-        return "UV Index in Singapore"
-
-    @property
     def native_value(self):
         """Return the UV index."""
         return self.coordinator.data.uvindex.uv_index
@@ -666,13 +576,3 @@ class NeaUVSensor(CoordinatorEntity, SensorEntity):
         return {
             "Updated at": self.coordinator.data.uvindex.timestamp,
         }
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Device info."""
-        return DeviceInfo(
-            name="Weather forecast coordinator",
-            identifiers={(DOMAIN, self._entry_id)},
-            manufacturer="NEA Weather",
-            model="data.gov.sg API Polling",
-        )

@@ -115,6 +115,12 @@ _ha_coordinator.CoordinatorEntity = _CoordinatorEntity
 _ha_coordinator.UpdateFailed = Exception
 
 # ---------------------------------------------------------------------------
+# homeassistant.helpers.device_registry — device infos are plain TypedDicts
+# ---------------------------------------------------------------------------
+_ha_device_registry = MagicMock()
+_ha_device_registry.DeviceInfo = dict
+
+# ---------------------------------------------------------------------------
 # homeassistant.components.camera
 # ---------------------------------------------------------------------------
 _ha_camera = MagicMock()
@@ -167,7 +173,7 @@ sys.modules.update({
     "homeassistant.helpers.aiohttp_client": MagicMock(),
     "homeassistant.helpers.httpx_client": MagicMock(),
     "homeassistant.helpers.update_coordinator": _ha_coordinator,
-    "homeassistant.helpers.device_registry": MagicMock(),
+    "homeassistant.helpers.device_registry": _ha_device_registry,
     "homeassistant.helpers.entity_platform": MagicMock(),
     "homeassistant.helpers.config_validation": MagicMock(),
     "aiohttp": _make_aiohttp_stub(),

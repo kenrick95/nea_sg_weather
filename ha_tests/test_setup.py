@@ -12,7 +12,7 @@ from __future__ import annotations
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.nea_sg_weather.const import DOMAIN
@@ -196,3 +196,41 @@ async def test_pollutant_sensors_register_disabled_without_changing_existing_ent
     assert hass.states.get(pollutant) is None
     assert hass.states.get("sensor.singapore_weather_pm25central") is not None
     assert hass.states.get("sensor.singapore_weather_psiwest") is not None
+
+
+async def test_region_devices_and_entity_names(hass: HomeAssistant, mock_nea_api):
+    """HA 2024.12 links region devices without changing existing entity IDs."""
+    entry = await _load(hass, WITH_REGION_SENSORS)
+    main = dr.async_get(hass).async_get_device(
+        identifiers={(DOMAIN, entry.entry_id)}
+    )
+    assert main.name == "Singapore Weather"
+    assert hass.states.get("sensor.singapore_weather_central").name == (
+        "Central Singapore Forecast"
+    )
+    assert hass.states.get("sensor.singapore_weather_pm25west").name == (
+        "Western Singapore PM2.5 (1-hour)"
+    )
+    entity = er.async_get(hass).async_get("sensor.singapore_weather_psiwest")
+    region = dr.async_get(hass).async_get(entity.device_id)
+    assert region.name == "Western Singapore"
+    assert region.via_device_id == main.id
+
+
+async def test_existing_device_is_reused(hass: HomeAssistant, mock_nea_api):
+    """Upgrade reuses the existing main device instead of creating a duplicate."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, data=WITH_REGION_SENSORS, title=WITH_REGION_SENSORS["name"]
+    )
+    entry.add_to_hass(hass)
+    registry = dr.async_get(hass)
+    old = registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="Weather forecast coordinator",
+    )
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    current = registry.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    assert current.id == old.id
+    assert current.name == "Singapore Weather"
