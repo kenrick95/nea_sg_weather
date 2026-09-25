@@ -192,6 +192,11 @@ PSI = {
                 "pm25_twenty_four_hourly": {
                     "west": 20, "east": 22, "central": 18, "south": 21, "north": 19,
                 },
+                "pm10_twenty_four_hourly": {"west": 30},
+                "so2_twenty_four_hourly": {"west": 5},
+                "o3_eight_hour_max": {"west": 18},
+                "co_eight_hour_max": {"west": 0.6},
+                "no2_one_hour_max": {"west": 12},
                 "pm25_sub_index": {
                     "west": 55, "east": 60, "central": 52, "south": 58, "north": 50,
                 },

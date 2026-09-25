@@ -2,9 +2,9 @@ name: HA Integration Tests
 
 on:
   push:
-    branches: [main, master]
+    branches: [ha-2024.12, "backport-*"]
   pull_request:
-    branches: [main, master]
+    branches: [ha-2024.12]
 
 jobs:
   ha-test:

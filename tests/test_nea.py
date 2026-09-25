@@ -550,12 +550,26 @@ class TestPSI:
         p.process_data()
         assert p.sub_indices == {}
 
+    def test_process_data_stores_pollutant_concentrations(self):
+        p = PSI()
+        resp = self._make_resp(self._readings(50), pm25_24h={"west": 33})
+        readings = resp["data"]["items"][0]["readings"]
+        readings["co_eight_hour_max"] = {"west": 0.6}
+        readings["no2_one_hour_max"] = {"east": 12}
+        p._resp = resp
+        p.process_data()
+        assert p.concentrations["pm25_24h"] == {"west": 33}
+        assert p.concentrations["co_8h"] == {"west": 0.6}
+        assert p.concentrations["no2_1h"] == {"east": 12}
+        assert p.concentrations["o3_8h"] == {}
+
     def test_initial_state(self):
         p = PSI()
         assert p.timestamp == ""
         assert p.data == {}
         assert p.pm25_24h == {}
         assert p.sub_indices == {}
+        assert p.concentrations == {}
 
 
 # ---------------------------------------------------------------------------

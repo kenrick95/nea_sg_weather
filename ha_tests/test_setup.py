@@ -12,6 +12,7 @@ from __future__ import annotations
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.nea_sg_weather.const import DOMAIN
@@ -177,3 +178,21 @@ async def test_pm25_sensor_has_value_without_weather_entity(hass: HomeAssistant,
     assert pm25 is not None
     assert pm25.state == "20"
     assert pm25.attributes["Updated at"] == "2024-01-01T11:30:00+08:00"
+
+
+async def test_pollutant_sensors_register_disabled_without_changing_existing_entities(
+    hass: HomeAssistant, mock_nea_api
+):
+    """New pollutant sensors are available for opt-in on HA 2024.12."""
+    entry = await _load(hass, WITH_REGION_SENSORS)
+    registry = er.async_get(hass)
+    pollutant = registry.async_get_entity_id(
+        "sensor", DOMAIN, "Singapore Weather pm25_24h West"
+    )
+    assert pollutant is not None
+    registered = registry.async_get(pollutant)
+    assert registered.config_entry_id == entry.entry_id
+    assert registered.disabled_by == er.RegistryEntryDisabler.INTEGRATION
+    assert hass.states.get(pollutant) is None
+    assert hass.states.get("sensor.singapore_weather_pm25central") is not None
+    assert hass.states.get("sensor.singapore_weather_psiwest") is not None

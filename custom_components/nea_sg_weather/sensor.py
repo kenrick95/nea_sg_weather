@@ -12,6 +12,8 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     CONF_PREFIX,
     CONF_REGION,
     CONF_SENSORS,
@@ -31,6 +33,7 @@ from .const import (
     DOMAIN,
     FORECAST_ICON_BASE_URL,
     FORECAST_ICON_MAP_CONDITION,
+    POLLUTANT_READINGS,
     REGIONS,
 )
 
@@ -139,6 +142,11 @@ async def async_setup_entry(
     if config_entry.data[CONF_SENSORS][CONF_REGION]:
         entities_list += [
             NeaPSISensor(coordinator, config_entry.data, region, entry_id)
+            for region in REGIONS
+        ]
+        entities_list += [
+            NeaPollutantSensor(coordinator, config_entry.data, pollutant, region, entry_id)
+            for pollutant in POLLUTANT_READINGS
             for region in REGIONS
         ]
 
@@ -412,6 +420,94 @@ class NeaPSISensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         """Device info."""
+        return DeviceInfo(
+            name="Weather forecast coordinator",
+            identifiers={(DOMAIN, self._entry_id)},
+            manufacturer="NEA Weather",
+            model="data.gov.sg API Polling",
+        )
+
+
+POLLUTANT_DEVICE_CLASSES = {
+    "pm25_24h": SensorDeviceClass.PM25,
+    "pm10_24h": SensorDeviceClass.PM10,
+    "so2_24h": SensorDeviceClass.SULPHUR_DIOXIDE,
+    "o3_8h": SensorDeviceClass.OZONE,
+    "co_8h": SensorDeviceClass.CO,
+    "no2_1h": SensorDeviceClass.NITROGEN_DIOXIDE,
+}
+POLLUTANT_NAMES = {
+    "pm25_24h": "PM2.5 (24-hour)",
+    "pm10_24h": "PM10 (24-hour)",
+    "so2_24h": "SO2 (24-hour)",
+    "o3_8h": "O3 (8-hour max)",
+    "co_8h": "CO (8-hour max)",
+    "no2_1h": "NO2 (1-hour max)",
+}
+
+
+class NeaPollutantSensor(CoordinatorEntity, SensorEntity):
+    """A regional pollutant concentration from the PSI response."""
+
+    _attr_entity_registry_enabled_default = False
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        coordinator,
+        config: MappingProxyType[str, Any],
+        pollutant: str,
+        region: str,
+        entry_id: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self._prefix = config[CONF_SENSORS][CONF_PREFIX]
+        self._pollutant = pollutant
+        self._region = region
+        self._entry_id = entry_id
+        self._attr_device_class = POLLUTANT_DEVICE_CLASSES[pollutant]
+        self._attr_native_unit_of_measurement = (
+            CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER
+            if pollutant == "co_8h"
+            else CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+        )
+        self.entity_id = (
+            f"sensor.{self._prefix}_{pollutant}_{region}".lower().replace(" ", "_")
+        )
+
+    @property
+    def unique_id(self) -> str:
+        return f"{self._prefix} {self._pollutant} {self._region}"
+
+    @property
+    def name(self) -> str:
+        location = (
+            "Central Singapore"
+            if self._region == "Central"
+            else f"{self._region}ern Singapore"
+        )
+        return f"{POLLUTANT_NAMES[self._pollutant]} in {location}"
+
+    @property
+    def available(self) -> bool:
+        return (
+            super().available
+            and self._region.lower()
+            in self.coordinator.data.psi.concentrations.get(self._pollutant, {})
+        )
+
+    @property
+    def native_value(self):
+        return self.coordinator.data.psi.concentrations[self._pollutant][
+            self._region.lower()
+        ]
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"Updated at": self.coordinator.data.psi.timestamp}
+
+    @property
+    def device_info(self) -> DeviceInfo:
         return DeviceInfo(
             name="Weather forecast coordinator",
             identifiers={(DOMAIN, self._entry_id)},

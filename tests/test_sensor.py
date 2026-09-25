@@ -9,6 +9,7 @@ from custom_components.nea_sg_weather.sensor import (
     NeaUVSensor,
     NeaPM25Sensor,
     NeaPSISensor,
+    NeaPollutantSensor,
 )
 from custom_components.nea_sg_weather.const import FORECAST_ICON_BASE_URL
 
@@ -35,6 +36,7 @@ def _make_coordinator(
     psi_data=None,
     psi_pm25_24h=None,
     psi_sub_indices=None,
+    psi_concentrations=None,
     psi_timestamp="2024-01-01T12:00:00+08:00",
 ):
     coord = MagicMock()
@@ -75,6 +77,10 @@ def _make_coordinator(
         "o3": {"west": 10, "east": 12, "central": 9, "south": 11, "north": 10},
     }
     coord.data.psi.timestamp = psi_timestamp
+    coord.data.psi.concentrations = psi_concentrations if psi_concentrations is not None else {
+        "pm25_24h": {"west": 33, "east": 22},
+        "co_8h": {"west": 0.6},
+    }
     return coord
 
 
@@ -464,3 +470,26 @@ class TestNeaPSISensor:
         sensor = NeaPSISensor(coord, _make_config(), "West", "entry1")
         attrs = sensor.extra_state_attributes
         assert set(attrs) == {"Updated at", "PM2.5 (24h)"}
+
+
+class TestNeaPollutantSensor:
+    def test_identity_and_disabled_default(self):
+        sensor = NeaPollutantSensor(
+            _make_coordinator(), _make_config("nea"), "pm25_24h", "West", "entry1"
+        )
+        assert sensor.unique_id == "nea pm25_24h West"
+        assert sensor.entity_id == "sensor.nea_pm25_24h_west"
+        assert sensor.name == "PM2.5 (24-hour) in Western Singapore"
+        assert sensor._attr_entity_registry_enabled_default is False
+        assert sensor._entry_id == "entry1"
+
+    def test_values_units_and_missing_region(self):
+        coord = _make_coordinator()
+        pm25 = NeaPollutantSensor(coord, _make_config(), "pm25_24h", "West", "entry1")
+        co = NeaPollutantSensor(coord, _make_config(), "co_8h", "West", "entry1")
+        missing = NeaPollutantSensor(coord, _make_config(), "co_8h", "East", "entry1")
+        assert pm25.available and pm25.native_value == 33
+        assert pm25._attr_native_unit_of_measurement == "µg/m³"
+        assert co.available and co.native_value == 0.6
+        assert co._attr_native_unit_of_measurement == "mg/m³"
+        assert not missing.available
