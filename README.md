@@ -4,9 +4,9 @@
 
 This branch starts from upstream `v2.7.1` and targets Home Assistant Core 2024.12.3. It retains the `nea_sg_weather` integration domain, config entries, entity IDs, and unique IDs. The minimum HA version is set to the version used in integration tests.
 
-The `v2.7.1.2` release backports v2.8.0's pollutant concentration sensors and entity naming. The 30 pollutant sensors are disabled by default; enable the ones you want in Settings > Devices & Services. Region devices use HA 2024.12's `DeviceInfo.via_device` instead of v2.8.0's `ChildDeviceInfo`. Existing entity IDs and unique IDs are preserved, while friendly names and device grouping change.
+The published `v2.7.1.2` release backports v2.8.0's pollutant concentration sensors; all 30 are disabled by default. This development branch also adapts v2.8.0's entity naming and region devices using HA 2024.12's `DeviceInfo.via_device`. Existing entity IDs and unique IDs are preserved, while friendly names and device grouping change. This additional change is planned for `v2.7.1.3` after the pollutant release has been tried on the user's HA installation.
 
-To use this fork through HACS, add `kenrick95/nea_sg_weather` as a custom repository of type **Integration** and install `v2.7.1.2`. Restart Home Assistant. Keep the existing integration entry in Settings > Devices & Services. The previous `v2.7.1.1` release remains available for rollback.
+To use this fork through HACS, add `kenrick95/nea_sg_weather` as a custom repository of type **Integration** and install the published `v2.7.1.2` release. Restart Home Assistant. Keep the existing integration entry in Settings > Devices & Services. The previous `v2.7.1.1` release remains available for rollback.
 
 For future maintenance, cherry-pick individual upstream fixes into `ha-2024.12`, review imports against Core 2024.12.3, run the unit and HA integration tests, and publish a new release with a matching manifest version.
 
