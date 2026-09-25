@@ -1,5 +1,15 @@
 # NEA Singapore Weather Integration for Home Assistant
 
+## HA 2024.12 maintenance branch
+
+This branch starts from upstream `v2.7.1`, which has been confirmed working on Home Assistant Core 2024.12.3. It retains the `nea_sg_weather` integration domain and existing config entries. The integration manifest declares a minimum of HA 2024.6.0; Core 2024.12.3 is the tested user version, not a promise that every intervening release has been tested.
+
+Upstream `v2.8.0` raises the minimum to HA 2026.9.0 and imports `ChildDeviceInfo` for region devices. Do not merge that release into this branch without an explicit HA 2024 compatibility port and runtime test.
+
+To use this branch through HACS, publish this repository to your GitHub account, create a release from the `v2.7.1.1` tag, and add `<owner>/<repository>` as a HACS custom repository of type **Integration**. Install it over the existing `custom_components/nea_sg_weather` files, then restart Home Assistant. Keep a backup of that directory first. Do not remove the integration from Settings > Devices & Services; that would discard its config entry. Do not install the upstream repository and this fork at the same time because both provide the same domain.
+
+For future maintenance, cherry-pick individual upstream fixes into `ha-2024.12`, review imports against Core 2024.12.3, run the tests, and publish a new release with a matching manifest version.
+
 [CHANGELOG](CHANGELOG.md)
 
 Home Assistant Integration to get current weather information directly from Data.gov.sg weather API published by Singapore National Environment Agency (SG NEA)
