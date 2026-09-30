@@ -1,5 +1,9 @@
-Unreleased (planned v2.7.1.3)
+v2.7.1.3 (upstream v2.9.0 backport for HA 2024.12)
 
+- Added Reconfigure for entity selection, scan interval and timeout; name and prefix stay fixed.
+- Removed only entities and region devices switched off during reconfiguration.
+- Added NEA landmarks, townships, MRT and expressway overlays and rain legend to the example card.
+- Kept the HACS minimum at Core 2024.12.3 and tested cleanup with its device registry API.
 - Adopted entity naming and region devices while retaining existing entity IDs and unique IDs.
 - Used HA 2024.12-compatible `DeviceInfo.via_device` for region devices.
 

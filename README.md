@@ -4,9 +4,9 @@
 
 This branch starts from upstream `v2.7.1` and targets Home Assistant Core 2024.12.3. It retains the `nea_sg_weather` integration domain, config entries, entity IDs, and unique IDs. The minimum HA version is set to the version used in integration tests.
 
-The published `v2.7.1.2` release backports v2.8.0's pollutant concentration sensors; all 30 are disabled by default. This development branch also adapts v2.8.0's entity naming and region devices using HA 2024.12's `DeviceInfo.via_device`. Existing entity IDs and unique IDs are preserved, while friendly names and device grouping change. This additional change is planned for `v2.7.1.3` after the pollutant release has been tried on the user's HA installation.
+Release `v2.7.1.3` incorporates upstream through `v2.9.0` (`4691c9e`): pollutant sensors, entity naming and region devices, reconfiguration, and map overlays. It uses HA 2024.12's concentration constants and `DeviceInfo.via_device` instead of newer APIs. Existing entity IDs and unique IDs are preserved; friendly names and device grouping change. All 30 pollutant sensors remain disabled by default.
 
-To use this fork through HACS, add `kenrick95/nea_sg_weather` as a custom repository of type **Integration** and install the published `v2.7.1.2` release. Restart Home Assistant. Keep the existing integration entry in Settings > Devices & Services. The previous `v2.7.1.1` release remains available for rollback.
+To use this fork through HACS, add `kenrick95/nea_sg_weather` as a custom repository of type **Integration** and install `v2.7.1.3`. Restart Home Assistant. Keep the existing integration entry in Settings > Devices & Services. Release `v2.7.1.2` remains available for rollback. Updating the integration does not change which entities are selected. Reconfigure removes entities you explicitly switch off; switching them on again may require restoring their customizations. The example map needs the updated YAML toggles copied into your dashboard configuration.
 
 For future maintenance, cherry-pick individual upstream fixes into `ha-2024.12`, review imports against Core 2024.12.3, run the unit and HA integration tests, and publish a new release with a matching manifest version.
 
@@ -32,13 +32,25 @@ Follow the integration config flow to set up the following entities:
 - `psi` sensors: 5 sensors with the 24-hour PSI for North/South/East/West/Central regions of Singapore; the 24-hour PM2.5 and the per-pollutant sub-indices are exposed as attributes
 - `uv_index` sensor: UV index for Singapore
 
+### Changing the configuration
+
+To change which entities an instance sets up (weather entity, areas, region sensors, rain map and sensors, scan interval or timeout), open the integration's menu and choose **Reconfigure**; there is no need to remove and re-add it. The name and sensor prefix cannot be changed there, so existing entity IDs stay the same. Entities you switch off are removed when the integration reloads, and those you keep keep their settings.
+
+### Devices and entity names
+
+Each configured instance creates a device named after the instance (e.g. "Singapore Weather") holding the weather entity, the UV, area and rainfall sensors and the rain map cameras. When region sensors are enabled, each region gets its own device ("Central Singapore", "Northern Singapore", …) under the main device, holding that region's forecast, PM2.5 and PSI sensors.
+
+Entity names follow Home Assistant's convention of device name plus entity name, e.g. "Singapore Weather UV index" or "Central Singapore PSI (24-hour)". Entity IDs are built from the configured prefix and do not depend on these names.
+
 
 ## Weather Map Overlays
 
 Several `yaml` files are included to help you quickly set up a weather map card on Lovelace UI.
 ![image](https://user-images.githubusercontent.com/57534857/142712510-cabf3214-09c2-4fda-8d43-ff230aebd91c.png)
 
-For the overlays to display properly, you will need the `area`, `region` and `rain` entities activated in the config flow.
+For the overlays to display properly, you will need the `area`, `region` and `rain` entities activated in the config flow (or switched on later with **Reconfigure**).
+
+Besides the rain map and the town and region weather icons, the card can show NEA's own map overlays from the [rain areas page](https://www.nea.gov.sg/weather/rain-areas) — landmarks, townships, MRT stations and expressways — each with its own toggle, and NEA's rain intensity legend below the map.
 
 1. `input_boolean.yaml`: to set up `input_boolean` toggles for the map overlays
 2. `automations.yaml`: automations to manage how the map toggles work
