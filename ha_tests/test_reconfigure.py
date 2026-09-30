@@ -217,3 +217,38 @@ async def test_reload_without_changes_removes_nothing(hass: HomeAssistant, mock_
 
     after = {e.entity_id for e in er.async_entries_for_config_entry(ent_reg, entry.entry_id)}
     assert after == before
+
+
+async def test_weather_only_can_enable_sensors(hass: HomeAssistant, mock_nea_api_all_areas):
+    """An old weather-only entry gains a prefix without changing its weather ID."""
+    config = {key: value for key, value in TWO_AREAS.items() if key != "sensors"}
+    config["sensor"] = False
+    entry = await _load(hass, config)
+    registry = er.async_get(hass)
+    weather_before = {
+        e.entity_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+        if e.domain == "weather"
+    }
+    await _reconfigure(hass, entry, _form())
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.data["sensors"]["prefix"] == config["name"]
+    assert hass.states.get("sensor.singapore_weather_bedok") is not None
+    assert weather_before == {
+        e.entity_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+        if e.domain == "weather"
+    }
+
+
+async def test_all_sensors_off_removes_regions_but_keeps_main_device(
+    hass: HomeAssistant, mock_nea_api_all_areas
+):
+    """The global sensor switch removes region devices even with region checked."""
+    entry = await _load(hass, ALL_ON)
+    registry = dr.async_get(hass)
+    main = registry.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    await _reconfigure(hass, entry, _form(sensor=False, region=True, rain=True))
+    assert entry.state is ConfigEntryState.LOADED
+    assert _unique_ids(hass, entry, "sensor") == set()
+    assert _unique_ids(hass, entry, "camera") == set()
+    assert _region_devices(hass, entry) == set()
+    assert registry.async_get_device(identifiers={(DOMAIN, entry.entry_id)}).id == main.id

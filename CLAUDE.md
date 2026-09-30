@@ -101,10 +101,9 @@ reload after a reconfigure leaves no orphans:
 - `__init__._async_remove_unconfigured` removes the entry's entities whose
   platform is not loaded any more (e.g. the weather entity, the cameras when
   rain is off, every sensor when sensors are off), and the region child
-  devices when region sensors are off. Child devices are found with
-  `dr.async_entries_for_parent_device` on the main device:
-  `async_entries_for_config_entry` does not return them, and
-  `DeviceRegistry.async_get_device` is deprecated in HA 2026.9.
+  devices when region sensors are off. On HA 2024.12, region devices are
+  found with `dr.async_entries_for_config_entry` and their exact identifiers;
+  they are linked to the main device by `via_device`.
 - `sensor.async_setup_entry` removes the entry's sensor entities whose unique
   ID is not among the sensors it is about to add (areas dropped, regions or
   rain switched off). Disabled-by-default sensors that are still configured
